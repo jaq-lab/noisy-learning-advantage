@@ -21,9 +21,9 @@ except Exception as e:  # pragma: no cover
     MPL_IMPORT_ERROR = e
 
 
-CHANNEL_ORDER = ["dephasing", "depolarizing", "relaxation"]
+CHANNEL_ORDER = ["dephasing", "relaxation"]
 CHANNEL_TITLES = {"dephasing": "Dephasing", "depolarizing": "Depolarizing", "relaxation": "Relaxation"}
-DEVICE_ORDER = ["B", "C"]
+DEVICE_ORDER = ["A", "B", "C"]
 DEVICE_MAP = {"I": "A", "T": "B", "S": "C", "A": "A", "B": "B", "C": "C"}
 METHOD_ORDER = ["hypergraph", "eigenshadow"]
 METHOD_LABELS = {"hypergraph": "Hypergraph", "eigenshadow": "Shadow-based Eigenshadow"}
@@ -40,6 +40,7 @@ TIME_REF_LINES = [
     (3.154e13, "1 y"),
     (3.154e16, "1000 y"),
 ]
+DEFAULT_MPLSTYLE = Path(__file__).resolve().parents[1] / "figures_notebooks" / "single_column.mplstyle"
 
 
 def _to_float(x, default=np.nan) -> float:
@@ -72,6 +73,25 @@ def _auto_ci_band_label(ci_z: float) -> str:
     if abs(z - 2.0) < 1e-9 or abs(z - 1.95996398454) < 0.03:
         return r"2-$\sigma$ CI band"
     return f"{z:.3g}-$\\sigma$ CI band"
+
+
+def _apply_mplstyle(style_path: str | None) -> None:
+    if plt is None:
+        return
+    if style_path is None:
+        return
+    sp = str(style_path).strip()
+    if not sp or sp.lower() in {"none", "off", "no"}:
+        return
+    p = Path(sp).expanduser().resolve()
+    if not p.exists():
+        print(f"[warn] mplstyle not found, skipping: {p}")
+        return
+    try:
+        plt.style.use(str(p))
+        print(f"[info] using mplstyle: {p}")
+    except Exception as e:
+        print(f"[warn] failed to apply mplstyle {p}: {e}")
 
 
 def _anchor_y_at_onset(xq: float, x: np.ndarray, y: np.ndarray) -> float:
@@ -185,8 +205,8 @@ def plot_grid(
     if plt is None:
         raise RuntimeError(f"matplotlib unavailable: {MPL_IMPORT_ERROR}")
 
-    nr = len(channels)
-    nc = len(devices)
+    nr = len(devices)
+    nc = len(channels)
     fig, axes = plt.subplots(nr, nc, figsize=(15.4, 11.8), sharex=True, sharey=True)
     if nr == 1:
         axes = np.array([axes])
@@ -196,8 +216,8 @@ def plot_grid(
     all_x: List[float] = []
     all_y: List[float] = []
 
-    for i, ch in enumerate(channels):
-        for j, dev in enumerate(devices):
+    for i, dev in enumerate(devices):
+        for j, ch in enumerate(channels):
             ax = axes[i, j]
             for alpha_mode in ALPHA_ORDER:
                 for p in p_values:
@@ -294,18 +314,17 @@ def plot_grid(
             for yref, lab in TIME_REF_LINES:
                 ax.axhline(y=yref, color="gray", linestyle=":", linewidth=0.8, alpha=0.50, zorder=0)
             if i == 0:
-                ax.set_title(f"Device {dev}", fontsize=13)
+                ax.set_title(CHANNEL_TITLES.get(ch, ch.title()), fontsize=13)
             if j == 0:
                 ax.set_ylabel(r"Sample Complexity $n_c$", fontsize=12)
-            if j == (nc - 1):
                 ax.text(
-                    1.03,
+                    -0.38,
                     0.5,
-                    CHANNEL_TITLES.get(ch, ch.title()),
+                    f"Device {dev}",
                     transform=ax.transAxes,
-                    rotation=-90,
+                    rotation=90,
                     va="center",
-                    ha="left",
+                    ha="center",
                     fontsize=11.5,
                     color="black",
                     alpha=0.92,
@@ -350,7 +369,7 @@ def plot_grid(
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="2-column (B,C) x 3-row (channels) MF comparison with alpha/p styling (HG + Eigenshadow only).")
+    ap = argparse.ArgumentParser(description="3-row (A,B,C) x 2-column (dephasing, relaxation) MF comparison with alpha/p styling (HG + Eigenshadow only).")
     ap.add_argument("--csv-alpha-nq", type=str, nargs="+", required=True,
                     help="One or more unified CSV files for |alpha|=n_q.")
     ap.add_argument("--csv-alpha-nq2", type=str, nargs="+", required=True,
@@ -359,7 +378,7 @@ def main() -> int:
     ap.add_argument("--readout-error", type=str, default="0%",
                     help="Fallback readout filter when --readout-error-by-device is not provided for a device.")
     ap.add_argument("--readout-error-by-device", nargs="*", default=None,
-                    help="Per-device readout filters, e.g.: B=0.1% C=1%")
+                    help="Per-device readout filters, e.g.: A=0.1%% B=0.1%% C=1%%")
     ap.add_argument("--devices", nargs="*", default=DEVICE_ORDER)
     ap.add_argument("--channels", nargs="*", default=CHANNEL_ORDER)
     ap.add_argument("--ps", nargs="*", type=float, default=P_DEFAULT)
@@ -370,6 +389,12 @@ def main() -> int:
         type=str,
         default=None,
         help="Optional legend label override. If omitted, label is derived from --ci-z.",
+    )
+    ap.add_argument(
+        "--mplstyle",
+        type=str,
+        default=str(DEFAULT_MPLSTYLE),
+        help="Matplotlib style file path (default: figures_notebooks/single_column.mplstyle). Use 'none' to disable.",
     )
     ap.add_argument("--output-dir", type=str, default=None)
     args = ap.parse_args()
@@ -385,11 +410,16 @@ def main() -> int:
         rows.extend(_read_rows(p1, "nq"))
     for p2 in p2_list:
         rows.extend(_read_rows(p2, "nq2"))
-    channels = [c for c in args.channels if c in CHANNEL_ORDER]
-    devices = [d for d in args.devices if d in DEVICE_ORDER]
+    channels = [str(c).strip().lower() for c in args.channels if str(c).strip().lower() in CHANNEL_ORDER]
+    devices: List[str] = []
+    for d in args.devices:
+        dd = DEVICE_MAP.get(str(d).strip(), str(d).strip())
+        if dd in DEVICE_ORDER and dd not in devices:
+            devices.append(dd)
     p_values = sorted(set(float(x) for x in args.ps))
     readout_by_device = _parse_readout_by_device(args.readout_error_by_device)
     ci_band_label = str(args.ci_band_label) if args.ci_band_label else _auto_ci_band_label(float(args.ci_z))
+    _apply_mplstyle(args.mplstyle)
 
     series = _collect_series(
         rows,
@@ -403,14 +433,14 @@ def main() -> int:
     if not series:
         raise RuntimeError("No rows matched filter; check eta/readout/readout-by-device/devices/channels/ps and CSV inputs.")
 
-    out_dir = Path(args.output_dir).resolve() if args.output_dir else p1_list[0].parent / "grid_BC"
+    out_dir = Path(args.output_dir).resolve() if args.output_dir else p1_list[0].parent / "grid_ABC"
     out_dir.mkdir(parents=True, exist_ok=True)
     if readout_by_device:
         ro_tag = "_".join(f"{d}{str(readout_by_device[d]).replace('%','pct').replace('.','p')}" for d in sorted(readout_by_device))
     else:
         ro_tag = str(args.readout_error).replace('%', 'pct')
     base = (
-        f"mf_grid_BC_channels_no_ml_eta_{str(args.eta).replace('.', 'p')}"
+        f"mf_grid_ABC_channels_no_ml_eta_{str(args.eta).replace('.', 'p')}"
         f"_re_{ro_tag}"
         f"_p_{'_'.join(str(p).replace('.','p') for p in p_values)}"
     )
