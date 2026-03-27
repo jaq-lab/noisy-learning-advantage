@@ -66,6 +66,41 @@ def _shade_color(base_color: str, intensity: float) -> tuple:
     return tuple(np.clip(out, 0.0, 1.0))
 
 
+def _auto_ci_band_label(ci_z: float) -> str:
+    z = _to_float(ci_z, default=np.nan)
+    if not _is_finite(z) or z <= 0:
+        return "CI band"
+    if abs(z - 1.0) < 1e-9:
+        return r"1-$\sigma$ CI band"
+    if abs(z - 2.0) < 1e-9 or abs(z - 1.95996398454) < 0.03:
+        return r"2-$\sigma$ CI band"
+    return f"{z:.3g}-$\\sigma$ CI band"
+
+
+def _parse_readout_by_device(items: List[str] | None) -> Dict[str, str]:
+    """
+    Parse CLI tokens of form DEVICE=READOUT (e.g., A=0.1% B=1%).
+    Device aliases I/T/A/B are normalized through DEVICE_MAP.
+    """
+    out: Dict[str, str] = {}
+    if not items:
+        return out
+    for tok in items:
+        s = str(tok).strip()
+        if not s:
+            continue
+        if "=" not in s:
+            raise ValueError(f"Invalid --readout-error-by-device token '{s}'. Expected DEVICE=READOUT.")
+        k, v = s.split("=", 1)
+        dev_in = str(k).strip()
+        dev = DEVICE_MAP.get(dev_in, dev_in)
+        ro = str(v).strip()
+        if not dev or not ro:
+            raise ValueError(f"Invalid --readout-error-by-device token '{s}'.")
+        out[dev] = ro
+    return out
+
+
 def _filter_rows(
     rows: List[dict],
     *,
@@ -74,6 +109,7 @@ def _filter_rows(
     etas: List[float],
     devices: List[str],
     readout_error: str,
+    readout_by_device: Dict[str, str],
 ) -> Dict[Tuple[str, str, float], List[dict]]:
     out: Dict[Tuple[str, str, float], List[dict]] = {}
     for r in rows:
@@ -93,7 +129,8 @@ def _filter_rows(
         dev = DEVICE_MAP.get(dev_in, dev_in)
         if dev not in devices:
             continue
-        if str(r.get("readout_error", "")) != str(readout_error):
+        ro_expected = str(readout_by_device.get(dev, readout_error))
+        if str(r.get("readout_error", "")) != ro_expected:
             continue
         nq = _to_float(r.get("nq", r.get("n_q")))
         if not _is_finite(nq):
@@ -113,6 +150,7 @@ def plot_onepanel(
     etas: List[float],
     devices: List[str],
     readout_error: str,
+    readout_by_device: Dict[str, str],
     out_png: Path,
     out_pdf: Path,
     ci_band_label: str = r"1-$\sigma$ CI band",
@@ -127,6 +165,7 @@ def plot_onepanel(
         etas=etas,
         devices=devices,
         readout_error=readout_error,
+        readout_by_device=readout_by_device,
     )
     if not grouped:
         raise RuntimeError("No rows matched the requested filter.")
@@ -343,12 +382,17 @@ def main() -> int:
     ap.add_argument("--p", type=float, default=0.1)
     ap.add_argument("--etas", nargs="*", type=float, default=[0.01, 0.05])
     ap.add_argument("--devices", nargs="*", default=["A", "B"])
-    ap.add_argument("--readout-error", type=str, default="0%")
+    ap.add_argument("--readout-error", type=str, default="0%",
+                    help="Fallback readout filter when --readout-error-by-device is not provided for a device.")
+    ap.add_argument("--readout-error-by-device", nargs="*", default=None,
+                    help="Per-device readout filters, e.g.: A=0.1% B=1%")
+    ap.add_argument("--ci-z", type=float, default=1.0,
+                    help="z used for CI semantics label (e.g., 1.0->1-sigma, 1.96->~2-sigma).")
     ap.add_argument(
         "--ci-band-label",
         type=str,
-        default=r"1-$\sigma$ CI band",
-        help="Legend label for uncertainty band (e.g., '1-$\\sigma$ CI band', '95% CI band (~2$\\sigma$)').",
+        default=None,
+        help="Optional legend label override. If omitted, label is derived from --ci-z.",
     )
     args = ap.parse_args()
 
@@ -356,13 +400,22 @@ def main() -> int:
     if not csv_path.exists():
         raise FileNotFoundError(csv_path)
     rows = _load_rows(csv_path)
+    readout_by_device = _parse_readout_by_device(args.readout_error_by_device)
+    ci_band_label = str(args.ci_band_label) if args.ci_band_label else _auto_ci_band_label(float(args.ci_z))
 
     out_dir = Path(args.output_dir).resolve() if args.output_dir else (csv_path.parent / "onepanel")
     out_dir.mkdir(parents=True, exist_ok=True)
+    if readout_by_device:
+        ro_tag = "_".join(
+            f"{d}{str(readout_by_device[d]).replace('%', 'pct').replace('.', 'p')}"
+            for d in sorted(readout_by_device)
+        )
+    else:
+        ro_tag = str(args.readout_error).replace('%', 'pct')
     base = (
         f"mf_onepanel_ch_{args.channel}_p_{str(args.p).replace('.', 'p')}"
         f"_eta_{'_'.join(str(e).replace('.', 'p') for e in args.etas)}"
-        f"_devices_{''.join(args.devices)}_re_{str(args.readout_error).replace('%', 'pct')}"
+        f"_devices_{''.join(args.devices)}_re_{ro_tag}"
     )
     out_png = out_dir / f"{base}.png"
     out_pdf = out_dir / f"{base}.pdf"
@@ -374,9 +427,10 @@ def main() -> int:
         etas=[float(x) for x in args.etas],
         devices=[str(d) for d in args.devices],
         readout_error=str(args.readout_error),
+        readout_by_device=readout_by_device,
         out_png=out_png,
         out_pdf=out_pdf,
-        ci_band_label=str(args.ci_band_label),
+        ci_band_label=ci_band_label,
     )
     print(f"[ok] saved: {out_png}")
     print(f"[ok] saved: {out_pdf}")
