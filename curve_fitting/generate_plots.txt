@@ -1,0 +1,20 @@
+# Fig. 1 
+# \alpha = nq/2
+python noisy-learning-advantage/curve_fitting/plot_mf_onepanel_relaxation_p01.py   --csv noisy-learning-advantage/curve_fitting/plots_newQ_alpha_nq2/ci68_IT/qvc_unified_eta_0p01_0p02_0p05_floor0p52_nhg1600_nml1600.csv   --channel relaxation --p 0.1 --etas 0.01 0.05 --devices A B   --readout-error-by-device A=0.1% B=0.1%   --ci-z 1.0
+
+# \alpha = nq
+python noisy-learning-advantage/curve_fitting/plot_mf_onepanel_relaxation_p01.py   --csv noisy-learning-advantage/curve_fitting/plots_newQ_alpha_nq/ci68_IT/qvc_unified_eta_0p01_0p02_0p05_floor0p52_nhg1600_nml1600.csv   --channel relaxation --p 0.1 --etas 0.01 0.05 --devices A B   --readout-error-by-device A=0.1% B=0.1%   --ci-z 1.0
+
+# Fig. 4/5
+python noisy-learning-advantage/curve_fitting/plot_mf_grid_BC_alpha_p_methods_no_ml.py \
+  --csv-alpha-nq \
+    noisy-learning-advantage/curve_fitting/plots_newQ_alpha_nq/ci68_IT/qvc_unified_eta_0p01_0p02_0p05_floor0p52_nhg1600_nml1600.csv \
+    noisy-learning-advantage/curve_fitting/plots_newQ_alpha_nq/ci68_S/qvc_unified_eta_0p01_0p02_0p05_floor0p52_nhg1600_nml1600.csv \
+  --csv-alpha-nq2 \
+    noisy-learning-advantage/curve_fitting/plots_newQ_alpha_nq2/ci68_IT/qvc_unified_eta_0p01_0p02_0p05_floor0p52_nhg1600_nml1600.csv \
+    noisy-learning-advantage/curve_fitting/plots_newQ_alpha_nq2/ci68_S/qvc_unified_eta_0p01_0p02_0p05_floor0p52_nhg1600_nml1600.csv \
+  --devices B C \
+  --readout-error-by-device B=0.1% C=1% \
+  --eta 0.01 --ps 0.01 0.1 \
+  --ci-z 1.0 \
+  --output-dir noisy-learning-advantage/curve_fitting/plots_newQ_grid_no_ml/ci68_BCmix

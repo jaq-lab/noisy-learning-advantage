@@ -1,0 +1,58 @@
+# --- DM vs theory: error bars only for DM, theory as connecting line ---
+fig, axes = plt.subplots(1, 3, figsize=(18, 5), sharey=True)
+panel_titles = [
+    "Relaxation: DM vs Theory",
+    "Dephasing: DM vs Theory",
+    "Both: DM vs Theory (composed)",
+]
+panel_channels = ["relaxation", "dephasing", "both"]
+colors = {1: "tab:blue", 4: "tab:orange", 8: "tab:green"}
+
+comparison_metrics = {ch: {} for ch in panel_channels}
+
+for ax, title, ch in zip(axes, panel_titles, panel_channels):
+    for w in ALPHA_WEIGHTS:
+        d = int(w)
+        amps = np.array(results[ch][w]["amp"], dtype=np.float64)
+        dm_mean = np.array(results[ch][w]["mean"], dtype=np.float64)
+        dm_std = np.array(results[ch][w]["std"], dtype=np.float64)
+        th = theory_curve(ch, amps, d, NQ)
+
+        mae = float(np.mean(np.abs(dm_mean - th)))
+        rmse = float(np.sqrt(np.mean((dm_mean - th) ** 2)))
+        comparison_metrics[ch][w] = {"mae": mae, "rmse": rmse}
+
+        # DM data: markers + vertical error bars, no connecting line
+        ax.errorbar(
+            amps,
+            dm_mean,
+            yerr=dm_std,
+            fmt="o",
+            linestyle="none",
+            ms=4,
+            elinewidth=1.1,
+            capsize=2,
+            color=colors[w],
+            label=fr"DM $|\alpha|={w}$",
+        )
+
+        # Theory: connected dashed line
+        ax.plot(amps, th, ls="--", lw=1.6, color=colors[w], alpha=0.9, label=fr"Theory $|\alpha|={w}$")
+
+    ax.set_xscale("log")
+    ax.set_xlabel("Noise amplitude")
+    ax.set_title(title)
+    ax.grid(True, which="both", alpha=0.3)
+
+axes[0].set_ylabel("Accuracy")
+axes[0].legend(frameon=False, fontsize=9)
+fig.suptitle("DM vs theoretical predictions", y=1.02)
+fig.tight_layout()
+plt.s
+
+print("Comparison metrics (DM vs theory):")
+for ch in panel_channels:
+    print(f"\n{ch}")
+    for w in ALPHA_WEIGHTS:
+        m = comparison_metrics[ch][w]
+        print(f"  |alpha|={w}: MAE={m['mae']:.6f}, RMSE={m['rmse']:.6f}")

@@ -1,0 +1,9 @@
+data/noisy_data/20260325_105901/T_relaxation_nq12_k4_nq_amp0.1/alphas_optimized_nq12_f16to19.npy
+
+
+*.npy
+*.json
+*.pdf
+*.csv
+*.png
+*.npz
