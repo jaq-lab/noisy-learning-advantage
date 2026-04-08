@@ -34,7 +34,7 @@ SHADOW_PATH = SCRIPT_DIR / "plot_shadowqmlml_nps_from_quantum_accuracy_curves.py
 METHOD_ORDER = ["hypergraph", "eigenshadow", "ml"]
 METHOD_LABELS = {
     "hypergraph": "Hypergraph",
-    "eigenshadow": "Shadow-based Eigenshadow",
+    "eigenshadow": "Eigenshadow",
     "ml": "Shadow-based ML",
 }
 METHOD_COLORS = {
@@ -43,7 +43,7 @@ METHOD_COLORS = {
     "ml": "#2f7d3d",
 }
 TARGET_COLORS = {0.6: "#1f77b4", 0.8: "#d62728"}
-P_INTENSITY = {0.05: 0.72, 0.1: 1.0}
+P_INTENSITY = {0.01: 0.55, 0.05: 0.72, 0.1: 1.0}
 
 
 def _to_float(x, default=np.nan) -> float:
@@ -64,6 +64,36 @@ def _safe_nps_from_log2(log2_v: float) -> float:
     if not _is_finite(log2_v):
         return float("nan")
     return float(np.power(2.0, np.clip(max(0.0, float(log2_v)), -1020.0, 1020.0)))
+
+
+def _epsilon_color_map_fig3(amplitudes: List[float]) -> Dict[float, str]:
+    """
+    Match fig3_mf_protocols.ipynb sampling: curves use ``cmap(np.linspace(0.4, 0.9, n))``
+    per channel; legends use ``plt.cm.Blues/Reds/Greens(0.7)``. Here the weakest→strongest
+    ε_p maps to Blues / Greens / Reds with the same linspace(0.4, 0.9, n) levels (softer
+    than high-saturation colormap tails).
+    """
+    ps = sorted({float(x) for x in amplitudes})
+    if plt is None:
+        return {p: "#555555" for p in ps}
+    n = len(ps)
+    if n == 1:
+        return {ps[0]: mcolors.to_hex(plt.cm.Blues(0.7))}
+    levels = np.linspace(0.4, 0.9, n)
+    if n == 2:
+        cmaps = (plt.cm.Blues, plt.cm.Reds)
+    elif n == 3:
+        cmaps = (plt.cm.Blues, plt.cm.Greens, plt.cm.Reds)
+    else:
+        cmap = plt.get_cmap("tab10")
+        return {p: mcolors.to_hex(cmap(i / max(n - 1, 1))) for i, p in enumerate(ps)}
+    return {p: mcolors.to_hex(cm(float(lev))) for p, cm, lev in zip(ps, cmaps, levels)}
+
+
+def _target_linestyle_map(targets: List[float]) -> Dict[float, str]:
+    st = sorted({float(t) for t in targets})
+    cycle = ["-", "--", "-.", (0, (3, 1, 1, 1))]
+    return {t: cycle[i % len(cycle)] for i, t in enumerate(st)}
 
 
 def _shade_color(base_color: str, intensity: float) -> tuple:
@@ -259,6 +289,46 @@ def _predict_extrapolated_curve(unified, predictor, obs_max: int, nq_grid: np.nd
     return (
         np.asarray(x_ext, dtype=float),
         np.asarray(y_ext, dtype=float),
+        np.asarray(y_lo, dtype=float),
+        np.asarray(y_hi, dtype=float),
+        np.asarray(x_untrusted, dtype=float),
+    )
+
+
+def _predict_model_curve_full_grid(
+    unified, predictor, obs_max: int, nq_grid: np.ndarray, target: float, ci_z: float
+):
+    """
+    Predicted n_c vs n_q on every n_q in nq_grid (status ok), plus untrusted n_q > obs_max
+    when applicable. Includes n_q ≤ obs_max so the fit is visible in the low-n_q regime.
+    """
+    x_fit: List[float] = []
+    y_fit: List[float] = []
+    y_lo: List[float] = []
+    y_hi: List[float] = []
+    x_untrusted: List[float] = []
+
+    extrap_trusted = bool(predictor.meta.get("extrapolation_trusted", True))
+    for nq in nq_grid:
+        nq_i = int(nq)
+        rec = unified._predict_point(predictor, float(target), nq_i, int(obs_max), ci_z=float(ci_z))
+        if not extrap_trusted and nq_i > int(obs_max):
+            rec["status"] = "untrusted_extrapolation"
+        st = str(rec.get("status", ""))
+        if st == "ok":
+            nps = _to_float(rec.get("nps", np.nan))
+            lo = _to_float(rec.get("nps_lo", np.nan))
+            hi = _to_float(rec.get("nps_hi", np.nan))
+            if _is_finite(nps) and nps > 0:
+                x_fit.append(float(nq_i))
+                y_fit.append(float(nps))
+                y_lo.append(float(lo) if _is_finite(lo) and lo > 0 else float("nan"))
+                y_hi.append(float(hi) if _is_finite(hi) and hi > 0 else float("nan"))
+        elif st == "untrusted_extrapolation" and nq_i > int(obs_max):
+            x_untrusted.append(float(nq_i))
+    return (
+        np.asarray(x_fit, dtype=float),
+        np.asarray(y_fit, dtype=float),
         np.asarray(y_lo, dtype=float),
         np.asarray(y_hi, dtype=float),
         np.asarray(x_untrusted, dtype=float),
@@ -465,14 +535,32 @@ def plot_validation(
     ci_z: float,
     output_png: Path,
     output_pdf: Path,
+    mplstyle_path: Path | None = None,
+    figsize_inches: Tuple[float, float] | None = None,
+    normalize_y_by_2pow_nq: bool = False,
+    extrapolated_line_only: bool = False,
+    plot_style: str = "default",
 ) -> None:
     if plt is None:
         raise RuntimeError(f"matplotlib unavailable: {MPL_IMPORT_ERROR}")
 
+    if mplstyle_path is not None:
+        plt.style.use(str(mplstyle_path))
+
+    use_fig3 = str(plot_style) == "fig3_mf"
+    eps_color_fig3 = _epsilon_color_map_fig3(amplitudes) if use_fig3 else {}
+    tls_map = _target_linestyle_map(targets) if use_fig3 else {}
+    line_only = bool(extrapolated_line_only) or use_fig3
+
+    _fs_title = float(plt.rcParams.get("axes.titlesize", 9))
+    _fs_label = float(plt.rcParams.get("axes.labelsize", 9))
+    _fs_leg = float(plt.rcParams.get("legend.fontsize", 7))
     nq_grid = np.arange(int(nq_min), int(nq_max) + 1)
     nr = len(channels)
     nc = len(METHOD_ORDER)
-    fig, axes = plt.subplots(nr, nc, figsize=(5.1 * nc + 0.8, 3.5 * nr + 0.9), sharex=True, sharey=True)
+    if figsize_inches is None:
+        figsize_inches = (10.0, 6.0)
+    fig, axes = plt.subplots(nr, nc, figsize=figsize_inches, sharex=True, sharey=True)
     if nr == 1:
         axes = np.array([axes])
     if nc == 1:
@@ -497,51 +585,77 @@ def plot_validation(
                 obs_max_vals.append(obs_max)
 
                 for target in targets:
-                    base_col = TARGET_COLORS.get(float(target), "#333333")
-                    col = _shade_color(base_col, P_INTENSITY.get(float(p), 0.88))
+                    if use_fig3:
+                        col = eps_color_fig3[float(p)]
+                        ls_model = tls_map[float(target)]
+                    else:
+                        base_col = TARGET_COLORS.get(float(target), "#333333")
+                        col = _shade_color(base_col, P_INTENSITY.get(float(p), 0.88))
+                        ls_model = "--"
                     x_obs, y_obs = _extract_observed_curve(rows, obs_nq_list, float(target))
-                    x_ext, y_ext, y_lo, y_hi, x_untrusted = _predict_extrapolated_curve(
-                        unified,
-                        pred,
-                        obs_max,
-                        nq_grid,
-                        float(target),
-                        float(ci_z),
-                    )
+                    if use_fig3:
+                        x_ext, y_ext, y_lo, y_hi, x_untrusted = _predict_model_curve_full_grid(
+                            unified,
+                            pred,
+                            obs_max,
+                            nq_grid,
+                            float(target),
+                            float(ci_z),
+                        )
+                    else:
+                        x_ext, y_ext, y_lo, y_hi, x_untrusted = _predict_extrapolated_curve(
+                            unified,
+                            pred,
+                            obs_max,
+                            nq_grid,
+                            float(target),
+                            float(ci_z),
+                        )
+                    if normalize_y_by_2pow_nq:
+                        if x_obs.size > 0:
+                            y_obs = y_obs / np.power(2.0, x_obs)
+                        if x_ext.size > 0:
+                            s_ext = np.power(2.0, x_ext)
+                            y_ext = y_ext / s_ext
+                            y_lo = np.where(np.isfinite(y_lo), y_lo / s_ext, y_lo)
+                            y_hi = np.where(np.isfinite(y_hi), y_hi / s_ext, y_hi)
 
                     if x_obs.size > 0:
                         any_drawn = True
                         all_y.extend(list(y_obs))
-                        ax.plot(
-                            x_obs,
-                            y_obs,
-                            color=col,
-                            linestyle="-",
-                            linewidth=2.05,
-                            marker="o",
-                            markersize=4.6,
-                            markerfacecolor=col,
-                            markeredgecolor="black",
-                            markeredgewidth=0.42,
-                            zorder=4,
-                        )
+                        _ms_obs = float(plt.rcParams.get("lines.markersize", 3.0)) + 1.2
+                        if use_fig3:
+                            ax.plot(
+                                x_obs,
+                                y_obs,
+                                linestyle="none",
+                                marker="o",
+                                markersize=_ms_obs,
+                                color=col,
+                                markerfacecolor=col,
+                                markeredgecolor="black",
+                                markeredgewidth=0.42,
+                                zorder=6,
+                            )
+                        else:
+                            ax.plot(
+                                x_obs,
+                                y_obs,
+                                color=col,
+                                linestyle="-",
+                                linewidth=float(plt.rcParams.get("lines.linewidth", 2.0)),
+                                marker="o",
+                                markersize=_ms_obs,
+                                markerfacecolor=col,
+                                markeredgecolor="black",
+                                markeredgewidth=0.42,
+                                zorder=6,
+                            )
 
                     if x_ext.size > 0:
                         any_drawn = True
                         all_y.extend(list(y_ext))
-                        ax.plot(
-                            x_ext,
-                            y_ext,
-                            color=col,
-                            linestyle="--",
-                            linewidth=1.95,
-                            marker="^",
-                            markersize=4.9,
-                            markerfacecolor="white",
-                            markeredgecolor=col,
-                            markeredgewidth=0.95,
-                            zorder=5,
-                        )
+                        _lw_ext = float(plt.rcParams.get("lines.linewidth", 2.0)) * 0.95
                         v = np.isfinite(y_lo) & np.isfinite(y_hi) & (y_lo > 0) & (y_hi > 0)
                         if np.any(v):
                             ax.fill_between(
@@ -553,8 +667,32 @@ def plot_validation(
                                 linewidth=0.0,
                                 zorder=2,
                             )
-                            ax.plot(x_ext[v], y_lo[v], color=col, linewidth=0.75, alpha=0.28, zorder=3)
-                            ax.plot(x_ext[v], y_hi[v], color=col, linewidth=0.75, alpha=0.28, zorder=3)
+                            if not line_only:
+                                ax.plot(x_ext[v], y_lo[v], color=col, linewidth=0.75, alpha=0.28, zorder=3)
+                                ax.plot(x_ext[v], y_hi[v], color=col, linewidth=0.75, alpha=0.28, zorder=3)
+                        if line_only:
+                            ax.plot(
+                                x_ext,
+                                y_ext,
+                                color=col,
+                                linestyle=ls_model,
+                                linewidth=_lw_ext,
+                                zorder=5,
+                            )
+                        else:
+                            ax.plot(
+                                x_ext,
+                                y_ext,
+                                color=col,
+                                linestyle="--",
+                                linewidth=_lw_ext,
+                                marker="^",
+                                markersize=float(plt.rcParams.get("lines.markersize", 3.0)) + 1.4,
+                                markerfacecolor="white",
+                                markeredgecolor=col,
+                                markeredgewidth=0.95,
+                                zorder=5,
+                            )
 
                     if x_untrusted.size > 0 and x_obs.size >= 2:
                         any_drawn = True
@@ -568,17 +706,30 @@ def plot_validation(
             if obs_max_vals:
                 obs_split = int(max(obs_max_vals))
                 ax.axvline(float(obs_split) + 0.5, color="gray", linestyle=":", linewidth=0.95, alpha=0.7)
-                ax.text(float(obs_split) + 0.65, 0.95, "obs→extrap", transform=ax.get_xaxis_transform(), fontsize=9.2, color="gray")
+                ax.text(
+                    float(obs_split) + 0.65,
+                    0.95,
+                    "obs→extrap",
+                    transform=ax.get_xaxis_transform(),
+                    fontsize=_fs_label,
+                    color="gray",
+                )
 
             if i == 0:
-                ax.set_title(METHOD_LABELS[method], fontsize=12.3)
+                ax.set_title(METHOD_LABELS[method], fontsize=_fs_title)
             if j == 0:
-                ax.set_ylabel(f"{ch.title()}\n" + r"Sample Complexity $n_c$ ($n_{ps}$)", fontsize=11.3)
+                ylabel = (
+                    f"{ch.title()}\n"
+                    + r"Sample Complexity $n_c(A_{\mathrm{target}}) / 2^{n_q}$"
+                    if normalize_y_by_2pow_nq
+                    else f"{ch.title()}\n" + r"Sample Complexity $n_c(A_{\mathrm{target}})$"
+                )
+                ax.set_ylabel(ylabel, fontsize=_fs_label)
             if i == (nr - 1):
-                ax.set_xlabel(r"Number of Qubits $n_q$", fontsize=11.5)
+                ax.set_xlabel(r"Number of Qubits $n_q$", fontsize=_fs_label)
 
             ax.set_yscale("log")
-            ax.grid(alpha=0.23)
+            ax.grid(True, linestyle="--", alpha=0.4)
             ax.set_xlim(float(nq_min) - 0.4, float(nq_max) + 0.4)
             if not any_drawn:
                 ax.text(0.5, 0.5, "no valid data", transform=ax.transAxes, ha="center", va="center", fontsize=10)
@@ -589,55 +740,118 @@ def plot_validation(
         for ax in axes.ravel():
             ax.set_ylim(ymin, ymax)
 
-    acc_handles = [
-        Line2D([0], [0], color=TARGET_COLORS[t], linewidth=2.6, label=f"target acc={t:.2f}")
-        for t in targets
-    ]
-    p_handles = [
-        Line2D([0], [0], color=_shade_color("#555555", P_INTENSITY.get(float(p), 0.88)), linewidth=2.8, label=f"p={float(p):.2g}")
-        for p in amplitudes
-    ]
-    sem_handles = [
-        Line2D([0], [0], color="black", linestyle="-", marker="o", markersize=5, label="observed (empirical)"),
-        Line2D([0], [0], color="black", linestyle="--", marker="^", markerfacecolor="white", markersize=5, label="extrapolated (fit, exact target)"),
-        Patch(facecolor="gray", alpha=0.18, label=f"CI band on extrapolated segment ({ci_z:.3g}-sigma)"),
-        Line2D([0], [0], color="gray", linestyle=":", linewidth=1.7, label="untrusted extrapolation guide"),
-    ]
-    leg1 = fig.legend(
-        handles=acc_handles,
-        loc="center left",
-        bbox_to_anchor=(0.86, 0.80),
-        frameon=False,
-        title="Accuracy Target",
-        fontsize=10.2,
-        title_fontsize=10.4,
-    )
-    fig.add_artist(leg1)
-    legp = fig.legend(
-        handles=p_handles,
-        loc="center left",
-        bbox_to_anchor=(0.86, 0.62),
-        frameon=False,
-        title="Noise p",
-        fontsize=10.2,
-        title_fontsize=10.4,
-    )
-    fig.add_artist(legp)
-    fig.legend(
-        handles=sem_handles,
-        loc="center left",
-        bbox_to_anchor=(0.86, 0.34),
-        frameon=False,
-        title="Semantics",
-        fontsize=10.2,
-        title_fontsize=10.4,
-    )
+    _lw_leg = float(plt.rcParams.get("lines.linewidth", 2.0)) * 1.2
+    _ms_leg = float(plt.rcParams.get("lines.markersize", 3.0)) + 1.5
+    _lw_leg_ext = float(plt.rcParams.get("lines.linewidth", 2.0)) * 0.95
+    if use_fig3:
+        p_handles = [
+            Line2D(
+                [0],
+                [0],
+                color=eps_color_fig3[float(p)],
+                linestyle="-",
+                linewidth=_lw_leg,
+                label=rf"$\epsilon_p = {float(p):g}$",
+            )
+            for p in sorted(set(float(x) for x in amplitudes))
+        ]
+        acc_handles = [
+            Line2D(
+                [0],
+                [0],
+                color="black",
+                linestyle=tls_map[float(t)],
+                linewidth=_lw_leg_ext * 1.2,
+                label=rf"$A_{{\mathrm{{target}}}} = {t:g}$",
+            )
+            for t in sorted(set(float(x) for x in targets))
+        ]
+        sem_handles = [
+            Line2D(
+                [0],
+                [0],
+                color="black",
+                linestyle="none",
+                marker="o",
+                markersize=_ms_leg,
+                markeredgecolor="black",
+                markeredgewidth=0.42,
+                label="observed (empirical)",
+            ),
+            Patch(
+                facecolor="gray",
+                alpha=0.18,
+                label=f"CI band on model curve ({ci_z:.3g}-sigma)",
+            ),
+            Line2D([0], [0], color="gray", linestyle=":", linewidth=1.7, label="untrusted extrapolation guide"),
+        ]
+    else:
+        acc_handles = [
+            Line2D(
+                [0],
+                [0],
+                color=TARGET_COLORS[t],
+                linewidth=_lw_leg,
+                label=rf"$A_{{\mathrm{{target}}}} = {t:g}$",
+            )
+            for t in targets
+        ]
+        p_handles = [
+            Line2D(
+                [0],
+                [0],
+                color=_shade_color("#555555", P_INTENSITY.get(float(p), 0.88)),
+                linewidth=_lw_leg,
+                label=rf"$\epsilon_p = {float(p):g}$",
+            )
+            for p in amplitudes
+        ]
+        if extrapolated_line_only:
+            extrap_leg = Line2D(
+                [0],
+                [0],
+                color="black",
+                linestyle="--",
+                linewidth=_lw_leg_ext * 1.2,
+                label="extrapolated (fit, exact target)",
+            )
+        else:
+            extrap_leg = Line2D(
+                [0],
+                [0],
+                color="black",
+                linestyle="--",
+                marker="^",
+                markerfacecolor="white",
+                markersize=_ms_leg,
+                label="extrapolated (fit, exact target)",
+            )
+        sem_handles = [
+            Line2D([0], [0], color="black", linestyle="-", marker="o", markersize=_ms_leg, label="observed (empirical)"),
+            extrap_leg,
+            Patch(facecolor="gray", alpha=0.18, label=f"CI band on extrapolated segment ({ci_z:.3g}-sigma)"),
+            Line2D([0], [0], color="gray", linestyle=":", linewidth=1.7, label="untrusted extrapolation guide"),
+        ]
+    # In-panel legends: second row (relaxation when nr>=2); col0 noise, col1 semantics, col2 A_target
+    _leg_row = 1 if nr > 1 else 0
+    _leg_fs = max(_fs_leg, 8.0)
+    _leg_kw = {"frameon": True, "fontsize": _leg_fs}
+    _leg_fs_sem = max(_leg_fs - 2.0, 6.0)
+    _leg_loc = {"loc": "upper left", "bbox_to_anchor": (0.02, 0.88)}  # ~10% below previous top anchor
+    axes[_leg_row, 0].legend(handles=p_handles, **_leg_loc, **_leg_kw)
+    if nc > 1:
+        if nc > 2:
+            axes[_leg_row, 1].legend(
+                handles=sem_handles,
+                **_leg_loc,
+                frameon=True,
+                fontsize=_leg_fs_sem,
+            )
+            axes[_leg_row, 2].legend(handles=acc_handles, **_leg_loc, **_leg_kw)
+        else:
+            axes[_leg_row, 1].legend(handles=acc_handles, **_leg_loc, **_leg_kw)
 
-    fig.suptitle(
-        "Fixed-Accuracy Validation",
-        fontsize=13.2,
-    )
-    fig.tight_layout(rect=[0.0, 0.0, 0.84, 0.95])
+    fig.tight_layout()
     output_png.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_png, dpi=260, bbox_inches="tight")
     fig.savefig(output_pdf, dpi=260, bbox_inches="tight")
@@ -677,6 +891,29 @@ def main() -> int:
     ap.add_argument("--ml-rows-json", type=str, default=None)
 
     ap.add_argument("--output-dir", type=str, default=None)
+    ap.add_argument(
+        "--mplstyle",
+        type=str,
+        default=None,
+        help="Optional matplotlib style file (e.g. figures_notebooks/single_column.mplstyle).",
+    )
+    ap.add_argument(
+        "--normalize-2pow-nq",
+        action="store_true",
+        help="Plot n_c / 2^{n_q} on the y-axis (baseline vs Hilbert-space dimension).",
+    )
+    ap.add_argument(
+        "--extrap-line-only",
+        action="store_true",
+        help="Draw extrapolation as dashed line + CI band only (no triangle markers).",
+    )
+    ap.add_argument(
+        "--plot-style",
+        type=str,
+        default="default",
+        choices=["default", "fig3_mf"],
+        help="fig3_mf: Blues/Greens/Reds ε_p colors, solid/dashed by A_target, markers-only data, model on full n_q grid.",
+    )
     args = ap.parse_args()
 
     if not UNIFIED_PATH.exists():
@@ -766,6 +1003,10 @@ def main() -> int:
     out_png = out_dir / f"{base}.png"
     out_pdf = out_dir / f"{base}.pdf"
 
+    _mpl = Path(args.mplstyle).resolve() if args.mplstyle else None
+    if _mpl is not None and not _mpl.exists():
+        raise FileNotFoundError(f"--mplstyle not found: {_mpl}")
+
     plot_validation(
         unified,
         predictors,
@@ -778,6 +1019,10 @@ def main() -> int:
         ci_z=float(args.ci_z),
         output_png=out_png,
         output_pdf=out_pdf,
+        mplstyle_path=_mpl,
+        normalize_y_by_2pow_nq=bool(args.normalize_2pow_nq),
+        extrapolated_line_only=bool(args.extrap_line_only),
+        plot_style=str(args.plot_style),
     )
 
     # Holdout validation + coverage diagnostics.
