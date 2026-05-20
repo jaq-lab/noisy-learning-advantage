@@ -1,0 +1,165 @@
+{
+  "summary": {
+    "2.0": {
+      "trusted_total": 20,
+      "total": 27,
+      "by_method": {
+        "hypergraph": {
+          "trusted": 9,
+          "total": 9
+        },
+        "eigenshadow": {
+          "trusted": 5,
+          "total": 9
+        },
+        "ml": {
+          "trusted": 6,
+          "total": 9
+        }
+      }
+    },
+    "2.5": {
+      "trusted_total": 25,
+      "total": 27,
+      "by_method": {
+        "hypergraph": {
+          "trusted": 9,
+          "total": 9
+        },
+        "eigenshadow": {
+          "trusted": 9,
+          "total": 9
+        },
+        "ml": {
+          "trusted": 7,
+          "total": 9
+        }
+      }
+    },
+    "3.0": {
+      "trusted_total": 25,
+      "total": 27,
+      "by_method": {
+        "hypergraph": {
+          "trusted": 9,
+          "total": 9
+        },
+        "eigenshadow": {
+          "trusted": 9,
+          "total": 9
+        },
+        "ml": {
+          "trusted": 7,
+          "total": 9
+        }
+      }
+    }
+  },
+  "flips": {
+    "2.0->2.5": [
+      {
+        "method": "eigenshadow",
+        "channel": "dephasing",
+        "p": 0.01,
+        "trusted_2.0": false,
+        "trusted_2.5": true,
+        "reason_2.0": "rmse_ratio_k_too_large:2.116>2",
+        "reason_2.5": "ok",
+        "rmse_ratio_k": 2.116028549505273
+      },
+      {
+        "method": "eigenshadow",
+        "channel": "dephasing",
+        "p": 0.05,
+        "trusted_2.0": false,
+        "trusted_2.5": true,
+        "reason_2.0": "rmse_ratio_k_too_large:2.108>2",
+        "reason_2.5": "ok",
+        "rmse_ratio_k": 2.107869306737746
+      },
+      {
+        "method": "eigenshadow",
+        "channel": "depolarizing",
+        "p": 0.05,
+        "trusted_2.0": false,
+        "trusted_2.5": true,
+        "reason_2.0": "rmse_ratio_k_too_large:2.079>2",
+        "reason_2.5": "ok",
+        "rmse_ratio_k": 2.079190135961312
+      },
+      {
+        "method": "eigenshadow",
+        "channel": "relaxation",
+        "p": 0.05,
+        "trusted_2.0": false,
+        "trusted_2.5": true,
+        "reason_2.0": "rmse_ratio_k_too_large:2.157>2",
+        "reason_2.5": "ok",
+        "rmse_ratio_k": 2.156832529585074
+      },
+      {
+        "method": "ml",
+        "channel": "depolarizing",
+        "p": 0.1,
+        "trusted_2.0": false,
+        "trusted_2.5": true,
+        "reason_2.0": "rmse_ratio_k_too_large:2.19>2",
+        "reason_2.5": "ok",
+        "rmse_ratio_k": 2.190481289720955
+      }
+    ],
+    "2.5->3.0": [],
+    "2.0->3.0": [
+      {
+        "method": "eigenshadow",
+        "channel": "dephasing",
+        "p": 0.01,
+        "trusted_2.0": false,
+        "trusted_3.0": true,
+        "reason_2.0": "rmse_ratio_k_too_large:2.116>2",
+        "reason_3.0": "ok",
+        "rmse_ratio_k": 2.116028549505273
+      },
+      {
+        "method": "eigenshadow",
+        "channel": "dephasing",
+        "p": 0.05,
+        "trusted_2.0": false,
+        "trusted_3.0": true,
+        "reason_2.0": "rmse_ratio_k_too_large:2.108>2",
+        "reason_3.0": "ok",
+        "rmse_ratio_k": 2.107869306737746
+      },
+      {
+        "method": "eigenshadow",
+        "channel": "depolarizing",
+        "p": 0.05,
+        "trusted_2.0": false,
+        "trusted_3.0": true,
+        "reason_2.0": "rmse_ratio_k_too_large:2.079>2",
+        "reason_3.0": "ok",
+        "rmse_ratio_k": 2.079190135961312
+      },
+      {
+        "method": "eigenshadow",
+        "channel": "relaxation",
+        "p": 0.05,
+        "trusted_2.0": false,
+        "trusted_3.0": true,
+        "reason_2.0": "rmse_ratio_k_too_large:2.157>2",
+        "reason_3.0": "ok",
+        "rmse_ratio_k": 2.156832529585074
+      },
+      {
+        "method": "ml",
+        "channel": "depolarizing",
+        "p": 0.1,
+        "trusted_2.0": false,
+        "trusted_3.0": true,
+        "reason_2.0": "rmse_ratio_k_too_large:2.19>2",
+        "reason_3.0": "ok",
+        "rmse_ratio_k": 2.190481289720955
+      }
+    ]
+  }
+}

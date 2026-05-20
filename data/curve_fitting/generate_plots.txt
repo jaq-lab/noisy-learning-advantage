@@ -1,0 +1,35 @@
+# Fig. 1 
+# \alpha = nq/2
+python noisy-learning-advantage/curve_fitting/plot_mf_onepanel_relaxation_p01.py   --csv noisy-learning-advantage/curve_fitting/plots_newQ_alpha_nq2/ci68_IT/qvc_unified_eta_0p01_0p02_0p05_floor0p52_nhg1600_nml1600.csv   --channel relaxation --p 0.1 --etas 0.01 0.05 --devices A B   --readout-error-by-device A=0.1% B=0.1%   --ci-z 1.0
+
+# \alpha = nq
+python noisy-learning-advantage/curve_fitting/plot_mf_onepanel_relaxation_p01.py   --csv noisy-learning-advantage/curve_fitting/plots_newQ_alpha_nq/ci68_IT/qvc_unified_eta_0p01_0p02_0p05_floor0p52_nhg1600_nml1600.csv   --channel relaxation --p 0.1 --etas 0.01 0.05 --devices A B   --readout-error-by-device A=0.1% B=0.1%   --ci-z 1.0
+
+# Fig. 4/5
+python noisy-learning-advantage/curve_fitting/plot_mf_grid_BC_alpha_p_methods_no_ml.py \
+  --csv-alpha-nq \
+    noisy-learning-advantage/curve_fitting/plots_newQ_alpha_nq/ci68_IT/qvc_unified_eta_0p01_0p02_0p05_floor0p52_nhg1600_nml1600.csv \
+    noisy-learning-advantage/curve_fitting/plots_newQ_alpha_nq/ci68_S/qvc_unified_eta_0p01_0p02_0p05_floor0p52_nhg1600_nml1600.csv \
+  --csv-alpha-nq2 \
+    noisy-learning-advantage/curve_fitting/plots_newQ_alpha_nq2/ci68_IT/qvc_unified_eta_0p01_0p02_0p05_floor0p52_nhg1600_nml1600.csv \
+    noisy-learning-advantage/curve_fitting/plots_newQ_alpha_nq2/ci68_S/qvc_unified_eta_0p01_0p02_0p05_floor0p52_nhg1600_nml1600.csv \
+  --devices A B C \
+  --readout-error-by-device A=0.1% B=0.1% C=1% \
+  --eta 0.01 --ps 0.01 0.1 \
+  --ci-z 1.0 \
+  --output-dir noisy-learning-advantage/curve_fitting/plots_newQ_grid_no_ml/ci68_ABCmix
+
+
+# Fig. validation of curve fitting appendix at acc=60 and acc=80
+python noisy-learning-advantage/curve_fitting/plot_mf_fixed_acc_validation.py \
+  --channels dephasing relaxation \
+  --ps 0.05 0.1 \
+  --targets 0.6 0.8 \
+  --nq-min 5 --nq-max 50 \
+  --ci-z 1.0 \
+  --holdout-counts 1 2 \
+  --hg-rows-json /home/ypatel/data1/noisy-learning-advantage/curve_fitting/plots_unified_paper_full/ci68/hg_bootstrap_threshold_rows.json \
+  --eig-rows-json /home/ypatel/data1/noisy-learning-advantage/curve_fitting/plots_unified_paper_full/ci68/eigenshadow_bootstrap_threshold_rows.json \
+  --ml-rows-json /home/ypatel/data1/noisy-learning-advantage/curve_fitting/plots_unified_paper_full/ci68/ml_bootstrap_threshold_rows.json \
+  --output-dir /home/ypatel/data1/noisy-learning-advantage/curve_fitting/plots_fixed_acc_validation_from_B1600
+

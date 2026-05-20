@@ -1,0 +1,110 @@
+Quantum JSON: nq=5..50, devices=['I', 'S', 'T'], channels=['dephasing', 'relaxation', 'depolarizing']
+Threshold grid: 0.51..0.97  (24 thresholds)
+
+Bootstrapping HG dense threshold rows …
+  HG cache miss: hg_bootstrap_rows_8d3a7335d3761154.json
+  HG ch=dephasing p=0.01 …
+    → 236/240 ok rows
+  HG ch=dephasing p=0.05 …
+    → 239/240 ok rows
+  HG ch=dephasing p=0.1 …
+    → 239/240 ok rows
+  HG ch=depolarizing p=0.01 …
+    → 230/240 ok rows
+  HG ch=depolarizing p=0.05 …
+    → 233/240 ok rows
+  HG ch=depolarizing p=0.1 …
+    → 236/240 ok rows
+  HG ch=relaxation p=0.01 …
+    → 238/240 ok rows
+  HG ch=relaxation p=0.05 …
+    → 229/240 ok rows
+  HG ch=relaxation p=0.1 …
+    → 231/240 ok rows
+  HG cache saved → plots_unified_paper_full/bootstrap_cache/hg_bootstrap_rows_8d3a7335d3761154.json
+  HG rows saved → plots_unified_paper_full/ci68/hg_bootstrap_threshold_rows.json
+
+Building HG opt1 predictors …
+  HG [dephasing,0.01]: thr=[0.510,0.970]  n_fits=24  has_cov=True
+  HG [dephasing,0.05]: thr=[0.510,0.970]  n_fits=24  has_cov=True
+  HG [dephasing,0.1]: thr=[0.510,0.970]  n_fits=24  has_cov=True
+  HG [depolarizing,0.01]: thr=[0.510,0.970]  n_fits=24  has_cov=True
+  HG [depolarizing,0.05]: thr=[0.510,0.970]  n_fits=24  has_cov=True
+  HG [depolarizing,0.1]: thr=[0.510,0.970]  n_fits=24  has_cov=True
+  HG [relaxation,0.01]: thr=[0.510,0.970]  n_fits=24  has_cov=True
+  HG [relaxation,0.05]: thr=[0.510,0.970]  n_fits=24  has_cov=True
+  HG [relaxation,0.1]: thr=[0.510,0.970]  n_fits=24  has_cov=True
+
+Bootstrapping Eigenshadow dense threshold rows …
+  Eigenshadow cache miss: eigenshadow_bootstrap_rows_662c5987613123fc.json
+  Eigenshadow ch=dephasing p=0.01 …
+    → 239/240 ok rows
+  Eigenshadow ch=dephasing p=0.05 …
+    → 239/240 ok rows
+  Eigenshadow ch=dephasing p=0.1 …
+    → 240/240 ok rows
+  Eigenshadow ch=depolarizing p=0.01 …
+    → 239/240 ok rows
+  Eigenshadow ch=depolarizing p=0.05 …
+    → 239/240 ok rows
+  Eigenshadow ch=depolarizing p=0.1 …
+    → 239/240 ok rows
+  Eigenshadow ch=relaxation p=0.01 …
+    → 237/240 ok rows
+  Eigenshadow ch=relaxation p=0.05 …
+    → 239/240 ok rows
+  Eigenshadow ch=relaxation p=0.1 …
+    → 238/240 ok rows
+  Eigenshadow cache saved → plots_unified_paper_full/bootstrap_cache/eigenshadow_bootstrap_rows_662c5987613123fc.json
+  Eigenshadow rows saved → plots_unified_paper_full/ci68/eigenshadow_bootstrap_threshold_rows.json
+  Eigenshadow bootstrap: 2149/2160 ok rows
+
+Building Eigenshadow opt1 predictors …
+  Eigenshadow [dephasing,0.01]: thr=[0.510,0.970]  n_fits=24  has_cov=True
+  Eigenshadow [dephasing,0.05]: thr=[0.510,0.970]  n_fits=24  has_cov=True
+  Eigenshadow [dephasing,0.1]: thr=[0.510,0.970]  n_fits=24  has_cov=True
+  Eigenshadow [depolarizing,0.01]: thr=[0.510,0.970]  n_fits=24  has_cov=True
+  Eigenshadow [depolarizing,0.05]: thr=[0.510,0.970]  n_fits=24  has_cov=True
+  Eigenshadow [depolarizing,0.1]: thr=[0.510,0.970]  n_fits=24  has_cov=True
+  Eigenshadow [relaxation,0.01]: thr=[0.510,0.970]  n_fits=24  has_cov=True
+  Eigenshadow [relaxation,0.05]: thr=[0.510,0.970]  n_fits=24  has_cov=True
+  Eigenshadow [relaxation,0.1]: thr=[0.510,0.970]  n_fits=24  has_cov=True
+
+Bootstrapping ML dense threshold rows …
+  ML cache miss: ml_bootstrap_rows_90b5c6f2f45f7925.json
+  ML curves: 72 in observed nq range [5, 6, 7, 8, 9, 10, 11, 12]
+  ML cache saved → plots_unified_paper_full/bootstrap_cache/ml_bootstrap_rows_90b5c6f2f45f7925.json
+  ML rows saved → plots_unified_paper_full/ci68/ml_bootstrap_threshold_rows.json
+  ML bootstrap: 1435/1728 ok rows
+
+Building ML opt1 predictors …
+  ML [dephasing,0.01]: thr=[0.570,0.970]  n_fits=21  has_cov=True
+  ML [dephasing,0.05]: thr=[0.530,0.970]  n_fits=23  has_cov=True
+  ML [dephasing,0.1]: thr=[0.530,0.830]  n_fits=16  has_cov=True
+  ML [depolarizing,0.01]: thr=[0.570,0.970]  n_fits=21  has_cov=True
+  WARN ML [depolarizing,0.01] high censoring near floor: 0.500
+  ML [depolarizing,0.05]: thr=[0.530,0.970]  n_fits=23  has_cov=True
+  ML [depolarizing,0.1]: thr=[0.530,0.850]  n_fits=17  has_cov=True
+  ML [relaxation,0.01]: thr=[0.570,0.970]  n_fits=21  has_cov=True
+  WARN ML [relaxation,0.01] high censoring near floor: 0.500
+  ML [relaxation,0.05]: thr=[0.550,0.970]  n_fits=22  has_cov=True
+  WARN ML [relaxation,0.05] high censoring near floor: 0.333
+  ML [relaxation,0.1]: thr=[0.530,0.970]  n_fits=23  has_cov=True
+
+Computing comparison for 3 device(s), 2 readout_error(s), 3 eta(s), 46 nq values …
+  22356 total rows: 10741 ok, 452 censored, 0 untrusted_extrapolation, 11163 random_baseline, 0 other
+Bootstrap threshold-correlation diagnostics: plots_unified_paper_full/bootstrap_replicates/qvc_unified_eta_0p01_0p02_0p05_floor0p52_nhg1600_nml1600_bootstrap_threshold_corr_diagnostics.json
+  Sensitivity report written → plots_unified_paper_full/ci68/sensitivity_report.md
+
+Rendering figures …
+  Saved: plots_unified_paper_full/ci68/qvc_unified_eta_0p01_0p02_0p05_floor0p52_nhg1600_nml1600_I_0pct.png/.pdf
+  Saved: plots_unified_paper_full/ci68/qvc_unified_eta_0p01_0p02_0p05_floor0p52_nhg1600_nml1600_I_1pct.png/.pdf
+  Saved: plots_unified_paper_full/ci68/qvc_unified_eta_0p01_0p02_0p05_floor0p52_nhg1600_nml1600_S_0pct.png/.pdf
+  Saved: plots_unified_paper_full/ci68/qvc_unified_eta_0p01_0p02_0p05_floor0p52_nhg1600_nml1600_S_1pct.png/.pdf
+  Saved: plots_unified_paper_full/ci68/qvc_unified_eta_0p01_0p02_0p05_floor0p52_nhg1600_nml1600_T_0pct.png/.pdf
+  Saved: plots_unified_paper_full/ci68/qvc_unified_eta_0p01_0p02_0p05_floor0p52_nhg1600_nml1600_T_1pct.png/.pdf
+
+Done.
+CSV:         plots_unified_paper_full/ci68/qvc_unified_eta_0p01_0p02_0p05_floor0p52_nhg1600_nml1600.csv
+Diagnostics: plots_unified_paper_full/ci68/qvc_unified_eta_0p01_0p02_0p05_floor0p52_nhg1600_nml1600_diagnostics.json
+Outputs:     plots_unified_paper_full/ci68

@@ -1,0 +1,32 @@
+{
+  "n": 7,
+  "num_samples": 1000,
+  "nps_list": [
+    891,
+    1448,
+    2352,
+    3821,
+    6208,
+    10085,
+    16384
+  ],
+  "num_features": 9,
+  "shape": [
+    1000,
+    7,
+    9
+  ],
+  "dtype": "float32",
+  "channel_config": {
+    "type": "depolarizing",
+    "strength": 0.01,
+    "thermal_p_exc": 0.0
+  },
+  "y_targ": "0000000",
+  "alpha_targ": "1000000",
+  "shadow_batch_size": 128,
+  "feature_file": "features.dat",
+  "rowcol_surrogate": true,
+  "flush_every": 10,
+  "dataset_ref": "/scratch-shared/ypatel/ml/exp_s1_fixed_alpha_quarter_ones_leading_fixed_y_all_zeros_q_5_10/datasets/dataset_457193fbc9c87d5d.npz"
+}
