@@ -22,7 +22,7 @@ if str(shadows_sim_path) not in sys.path:
 
 try:
     from shadow_mcs_jitted import (
-        get_kraus_operators,
+        get_raus_operators,
         generate_psi_F_vector,
         trajectory_from_key_jit,
         sample_trajectories,
@@ -69,59 +69,84 @@ def get_kraus_operators_with_aliases(channel_config):
 
 
 def process_results_to_accuracy(
-    measurement_results,
-    qubit_indices,
-    f_values,
-    alpha_pattern,
-    nq,
-    num_qubits,
-):
-    """Compute shadow tomography accuracy from measurement results.
+    results: jnp.ndarray,
+    measurement_indices: jnp.ndarray,
+    f_vec: jnp.ndarray,
+    alpha: jnp.ndarray,
+    nq: int,
+    n_measured: int
+) -> float:
+    """
+    JIT-compatible version: pure JAX operations, works inside vmap/jit.
+    
+    Computes accuracy matching ns.get_accuracy logic:
+    - Takes last bit as 'b'
+    - Takes rest of bits, adds "0", converts to 'y'
+    - Checks if F[y XOR alpha] XOR F[y] == b
+    - Sums probabilities where this is true
     
     Args:
-        measurement_results: (shots, nq) array of measurement outcomes
-        qubit_indices: indices of measured qubits
-        f_values: (2**nq,) F function values
-        alpha_pattern: (nq,) binary array indicating probed qubits
-        nq: number of qubits
-        num_qubits: total number of qubits (may differ from nq in mapped scenarios)
-        
+        results: (shots, nq) measurement outcomes as 0/1
+        measurement_indices: (n_measured,) which qubits to measure
+        f_vec: (2^nq,) F vector
+        alpha: (nq,) alpha bitstring
+        nq: total number of qubits
+        n_measured: number of measured qubits
+    
     Returns:
-        Scalar accuracy value
+        accuracy: float scalar
     """
-    shots = measurement_results.shape[0]
-
-    # Convert to numpy first — handles both numpy and JAX arrays
-    import jax
-    bitstrings = np.asarray(jax.device_get(measurement_results)).astype(np.int32)
-
-    # Compute parity-based accuracy: for each measurement outcome,
-    # compute (-1)^(f · b) where b is the measurement bitstring
-    f_array = np.asarray(f_values, dtype=np.int32)
-    alpha_array = np.asarray(alpha_pattern, dtype=np.int32)
+    # Extract measured qubits: (shots, n_measured)
+    measured = results[:, measurement_indices]
     
-    # Compute f dot product with bitstring for each shot
-    # Only include qubits in the alpha pattern
-    alpha_indices = np.where(alpha_array > 0)[0]
+    # Convert bitstrings to integers: (shots,)
+    powers = 2 ** jnp.arange(n_measured - 1, -1, -1, dtype=jnp.int32)
+    outcome_ints = (measured @ powers).astype(jnp.int32)
     
-    if len(alpha_indices) == 0:
-        # If no qubits in alpha pattern, accuracy is 1
-        return 1.0
+    # Histogram: (2^n_measured,)
+    n_outcomes = 2 ** n_measured
+    histogram = jnp.bincount(outcome_ints, length=n_outcomes)
     
-    # Extract f values and bitstrings for alpha qubits
-    f_alpha = f_array[alpha_indices]
-    bitstrings_alpha = bitstrings[:, alpha_indices]
+    outcome_values = jnp.arange(n_outcomes, dtype=jnp.int32)
     
-    # Compute parity: f · b mod 2
-    parities = np.sum(f_alpha[np.newaxis, :] * bitstrings_alpha, axis=1) % 2
+    # Convert outcomes to bit arrays: (n_outcomes, n_measured)
+    outcome_bits = ((outcome_values[:, None] >> jnp.arange(n_measured - 1, -1, -1, dtype=jnp.int32)) & 1).astype(jnp.int32)
     
-    # Compute (-1)^parity
-    signs = (-1.0) ** parities
+    # Extract b (last bit of outcome)
+    b_vals = outcome_bits[:, -1].astype(jnp.int32)
     
-    # Accuracy is mean of signs
-    accuracy = np.mean(signs)
+    # Create y_bits: outcome_bits with last bit set to 0
+    y_bits = outcome_bits.at[:, -1].set(0)
     
-    return float(accuracy)
+    # Map y_bits to full space
+    full_powers = 2 ** jnp.arange(nq - 1, -1, -1, dtype=jnp.int32)
+    
+    y_bits_full = jnp.zeros((n_outcomes, nq), dtype=jnp.int32)
+    y_bits_full = y_bits_full.at[jnp.arange(n_outcomes)[:, None], measurement_indices[None, :]].set(y_bits)
+    y_vals_full = (y_bits_full @ full_powers).astype(jnp.int32)
+    
+    # Get alpha bits in full nq-bit space
+    alpha_bits_full = alpha.astype(jnp.int32)
+    
+    # XOR y_bits_full with alpha_bits_full
+    y_xor_alpha_bits_full = jnp.bitwise_xor(y_bits_full, alpha_bits_full[None, :])
+    y_xor_alpha_full = (y_xor_alpha_bits_full @ full_powers).astype(jnp.int32)
+    
+    # Ensure indices are within bounds
+    y_vals_safe = y_vals_full % f_vec.shape[0]
+    y_xor_alpha_safe = y_xor_alpha_full % f_vec.shape[0]
+    
+    f_y = f_vec[y_vals_safe]
+    f_y_xor_alpha = f_vec[y_xor_alpha_safe]
+    
+    predicted_b = jnp.bitwise_xor(f_y, f_y_xor_alpha)
+    correct = (predicted_b == b_vals).astype(jnp.float64)
+    
+    # Sum probabilities of correct outcomes
+    total_shots = jnp.sum(histogram)
+    accuracy = jnp.sum(histogram.astype(jnp.float64) * correct) / jnp.maximum(total_shots, 1.0)
+    
+    return accuracy
 
 
 __all__ = [

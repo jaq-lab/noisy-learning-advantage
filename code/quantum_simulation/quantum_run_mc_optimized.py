@@ -12,17 +12,10 @@ from functools import partial
 from typing import Dict, Tuple, Any
 import sys
 import os
-from pathlib import Path
 import tensorcircuit as tc
 
-# Add paths for imports
+# Import the jitted functions
 sys.path.append(os.path.abspath("modules"))
-
-# Add shadows_simulation to path
-project_root = Path(__file__).parent.parent  # noisy-learning-advantage-3/
-shadows_sim_path = project_root / "shadows_simulation"
-if str(shadows_sim_path) not in sys.path:
-    sys.path.insert(0, str(shadows_sim_path))
 
 # Import jitted trajectory sampling from shadow_mcs_jitted
 import shadow_mcs_jitted as shadow_module

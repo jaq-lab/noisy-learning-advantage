@@ -1,0 +1,14 @@
+{
+  "device": "S",
+  "channel": "relaxation",
+  "nq": 4,
+  "job_index": 0,
+  "f_start": 0,
+  "f_end": 0,
+  "nfk": 1,
+  "total_nf": 1,
+  "f_seed": 42,
+  "acc_file": "acc_optimized_nq4_f0to0.npy",
+  "alpha_file": "alphas_optimized_nq4_f0to0.npy",
+  "method": "no_importance_sampling"
+}

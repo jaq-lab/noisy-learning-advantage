@@ -29,10 +29,8 @@ import jax
 import jax.numpy as jnp
 import tensorcircuit as tc
 
-# Local modules — use __file__-relative path so the script works from any CWD
-_modules_dir = str(Path(__file__).parent / "modules")
-if _modules_dir not in sys.path:
-    sys.path.insert(0, _modules_dir)
+# Local modules (same as original)
+sys.path.append(os.path.abspath("modules"))
 import quantum_device_sim as qd
 import channel_sampler as cs
 import noisy_sim as ns
@@ -394,8 +392,7 @@ def sample_and_simulate_trajectories_batch(
     T2,
 ):
     """Sample a batch of trajectories and simulate to get mean accuracy."""
-    generate_psi_F_vector = qrmc_opt.generate_psi_F_vector
-    trajectory_from_key_jit = qrmc_opt.trajectory_from_key_jit
+    from shadow_mcs_jitted import generate_psi_F_vector, trajectory_from_key_jit
 
     psi0 = generate_psi_F_vector(f_vec, nq)
     keys = jax.random.split(key, num_samples)
@@ -443,9 +440,11 @@ def sample_and_simulate_trajectories_grouped(
     T2,
 ) -> float:
     """Chunked trajectory sampling, group by unique state, simulate unique only; same logic as original."""
-    generate_psi_F_vector = qrmc_opt.generate_psi_F_vector
-    trajectory_from_key_jit = qrmc_opt.trajectory_from_key_jit
-    group_trajectories_jax = qrmc_opt.group_trajectories_jax
+    from shadow_mcs_jitted import (
+        generate_psi_F_vector,
+        trajectory_from_key_jit,
+        group_trajectories_jax,
+    )
 
     num_chunks = (total_samples + chunk_size - 1) // chunk_size
     eprint(
