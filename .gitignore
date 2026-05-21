@@ -1,0 +1,49 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+ENV/
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+*.ipynb_checkpoints/
+*.nbconvert/
+
+# --- Simulation outputs (large, deposited on Zenodo) ---
+code/quantum_simulation/cluster_results/
+code/quantum_simulation/dm_verification_logs/
+
+# --- Data archives (large raw data, deposited on Zenodo) ---
+data/old/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.vscode/
+*.swp
+*.swo
+*~
+
+# --- Compiled / binary ---
+*.so
+*.dylib
+*.dll
+*.npy.gz
+*.npz.gz
+
+# --- Secrets / credentials ---
+.env
+*.pem
+*.key

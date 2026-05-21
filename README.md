@@ -1,11 +1,21 @@
 # Noisy Learning Advantage
 
+[![arXiv](https://img.shields.io/badge/arXiv-2605.21346-b31b1b?logo=arxiv&logoColor=white)](https://arxiv.org/abs/2605.21346)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
+[![JAX](https://img.shields.io/badge/JAX-accelerated-9cf?logo=google&logoColor=white)](https://github.com/google/jax)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Cite](https://img.shields.io/badge/cite-CITATION.cff-lightgrey?logo=github)](CITATION.cff)
+[![Status: WIP](https://img.shields.io/badge/status-work--in--progress-orange)](https://github.com/jaq-lab/noisy-learning-advantage)
+
 > ⚠️ **Work in Progress** — This repository is under active development. Structure, APIs, and results may change without notice.
 
 This repository contains simulations and analysis code for the paper:
 
-> **"Noisy Learning Advantage of Quantum Protocols"**  
+> **"Evidence of Quantum Machine Learning Advantage with Tens of Noisy Qubits"**  
+> Yash J. Patel, Riccardo Molteni, Evert van Nieuwenburg, Vedran Dunjko and Jan A. Krzywda[arXiv:2605.21346](https://arxiv.org/abs/2605.21346)  
 > Investigating when and how quantum measurement protocols retain a learning advantage under realistic, hardware-level noise.
+
+
 
 ---
 
@@ -15,11 +25,11 @@ The central question: *does a quantum shadow-tomography protocol still beat clas
 
 The schematic below (Fig. 1 of the paper) illustrates the setup — a noisy quantum device produces measurement outcomes that are used to learn a target observable:
 
-> 📄 **Fig. 1 cartoon** — `manuscript/figures_manuscript/Fig1_cartoon.pdf`
+![Fig. 1 — Setup cartoon](manuscript/figures_manuscript/Fig1_cartoon.png)
 
-The main quantitative result (Fig. 4) shows the **number of samples needed** (`n_ps`) to reach a target accuracy as a function of system size (`n_q`), comparing hypergraph, shadow-surrogate and ML baselines across noise channels:
+The main quantitative result (Fig. 5) shows the **number of samples needed** (`n_c`) to reach a target accuracy as a function of system size (`n_q`), comparing hypergraph, shadow-surrogate and ML baselines across dephasing and relaxation noise channels:
 
-> 📊 **Main result** — `manuscript/figures_manuscript/fig4_dephasing_relax.pdf`
+![Fig. 4 — Main result: sample complexity vs system size](manuscript/figures_manuscript/fig4_dephasing_relax.png)
 
 ---
 

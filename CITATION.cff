@@ -1,0 +1,43 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite the paper below."
+title: "Noisy Learning Advantage of Quantum Protocols"
+type: software
+authors:
+  - family-names: Danaci
+    given-names: Onur
+  - family-names: Patel
+    given-names: Yash J.
+  - family-names: Molteni
+    given-names: Riccardo
+  - family-names: van Nieuwenburg
+    given-names: Evert
+  - family-names: Dunjko
+    given-names: Vedran
+  - family-names: Krzywda
+    given-names: Jan A.
+repository-code: "https://github.com/jaq-lab/noisy-learning-advantage"
+url: "https://arxiv.org/abs/2605.21346"
+license: MIT
+date-released: "2026-05-21"
+preferred-citation:
+  type: preprint
+  title: "Noisy Learning Advantage of Quantum Protocols"
+  authors:
+    - family-names: Danaci
+      given-names: Onur
+    - family-names: Patel
+      given-names: Yash J.
+    - family-names: Molteni
+      given-names: Riccardo
+    - family-names: van Nieuwenburg
+      given-names: Evert
+    - family-names: Dunjko
+      given-names: Vedran
+    - family-names: Krzywda
+      given-names: Jan A.
+  year: 2026
+  url: "https://arxiv.org/abs/2605.21346"
+  identifiers:
+    - type: url
+      value: "https://arxiv.org/abs/2605.21346"
+      description: "arXiv preprint"
