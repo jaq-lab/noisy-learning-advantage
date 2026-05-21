@@ -1,0 +1,46 @@
+/Users/krzywdaja/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Please first ``pip install -U qiskit`` to enable related functionality in translation module
+Please first ``pip install -U cirq`` to enable related functionality in translation module
+Traceback (most recent call last):
+  File "/Users/krzywdaja/Documents/noisy-learning-advantage-3/code/quantum_simulation/quantum_run_dm_verification.py", line 46, in <module>
+    import quantum_device_sim as qd
+  File "/Users/krzywdaja/Documents/noisy-learning-advantage-3/code/quantum_simulation/modules/quantum_device_sim.py", line 12, in <module>
+    import noisy_sim as ns
+  File "/Users/krzywdaja/Documents/noisy-learning-advantage-3/code/quantum_simulation/modules/noisy_sim.py", line 2, in <module>
+    from qiskit_ibm_runtime import Sampler, QiskitRuntimeService
+  File "/Users/krzywdaja/Library/Python/3.9/lib/python/site-packages/qiskit_ibm_runtime/__init__.py", line 204, in <module>
+    from .qiskit_runtime_service import QiskitRuntimeService
+  File "/Users/krzywdaja/Library/Python/3.9/lib/python/site-packages/qiskit_ibm_runtime/qiskit_runtime_service.py", line 26, in <module>
+    from qiskit_ibm_runtime import ibm_backend
+  File "/Users/krzywdaja/Library/Python/3.9/lib/python/site-packages/qiskit_ibm_runtime/ibm_backend.py", line 36, in <module>
+    from .api.clients import RuntimeClient
+  File "/Users/krzywdaja/Library/Python/3.9/lib/python/site-packages/qiskit_ibm_runtime/api/clients/__init__.py", line 15, in <module>
+    from .auth import AuthClient
+  File "/Users/krzywdaja/Library/Python/3.9/lib/python/site-packages/qiskit_ibm_runtime/api/clients/auth.py", line 22, in <module>
+    from ..client_parameters import ClientParameters
+  File "/Users/krzywdaja/Library/Python/3.9/lib/python/site-packages/qiskit_ibm_runtime/api/client_parameters.py", line 16, in <module>
+    from ..proxies import ProxyConfiguration
+  File "/Users/krzywdaja/Library/Python/3.9/lib/python/site-packages/qiskit_ibm_runtime/proxies/__init__.py", line 17, in <module>
+    from .configuration import ProxyConfiguration
+  File "/Users/krzywdaja/Library/Python/3.9/lib/python/site-packages/qiskit_ibm_runtime/proxies/configuration.py", line 20, in <module>
+    from requests_ntlm import HttpNtlmAuth
+  File "/Users/krzywdaja/Library/Python/3.9/lib/python/site-packages/requests_ntlm/__init__.py", line 1, in <module>
+    from .requests_ntlm import HttpNtlmAuth
+  File "/Users/krzywdaja/Library/Python/3.9/lib/python/site-packages/requests_ntlm/requests_ntlm.py", line 9, in <module>
+    import spnego
+  File "/Users/krzywdaja/Library/Python/3.9/lib/python/site-packages/spnego/__init__.py", line 26, in <module>
+    from spnego.auth import client, server
+  File "/Users/krzywdaja/Library/Python/3.9/lib/python/site-packages/spnego/auth.py", line 8, in <module>
+    from spnego._credssp import CredSSPProxy
+  File "/Users/krzywdaja/Library/Python/3.9/lib/python/site-packages/spnego/_credssp.py", line 48, in <module>
+    from spnego.tls import (
+  File "/Users/krzywdaja/Library/Python/3.9/lib/python/site-packages/spnego/tls.py", line 10, in <module>
+    from cryptography import x509
+  File "<frozen importlib._bootstrap>", line 1007, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 986, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 680, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 846, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 978, in get_code
+  File "<frozen importlib._bootstrap_external>", line 647, in _compile_bytecode
+KeyboardInterrupt

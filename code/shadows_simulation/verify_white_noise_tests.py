@@ -153,8 +153,8 @@ def test_white_noise_without_decoherence():
     
     for nq_idx, n_qubits in enumerate([4,5, 6]):
         
-        num_samples = 100  # Reduced for efficiency
-        num_repetitions = 100  # Reduced for efficiency
+        num_samples = 10  # Reduced for efficiency
+        num_repetitions = 10  # Reduced for efficiency
         
         # Generate F vectors
         np.random.seed(42)

@@ -2,7 +2,24 @@
 
 > ⚠️ **Work in Progress** — This repository is under active development. Structure, APIs, and results may change without notice.
 
-This repository contains simulations and analysis investigating the learning advantage of quantum protocols under realistic noise conditions.
+This repository contains simulations and analysis code for the paper:
+
+> **"Noisy Learning Advantage of Quantum Protocols"**  
+> Investigating when and how quantum measurement protocols retain a learning advantage under realistic, hardware-level noise.
+
+---
+
+## Overview
+
+The central question: *does a quantum shadow-tomography protocol still beat classical ML when the quantum device is noisy?*
+
+The schematic below (Fig. 1 of the paper) illustrates the setup — a noisy quantum device produces measurement outcomes that are used to learn a target observable:
+
+> 📄 **Fig. 1 cartoon** — `manuscript/figures_manuscript/Fig1_cartoon.pdf`
+
+The main quantitative result (Fig. 4) shows the **number of samples needed** (`n_ps`) to reach a target accuracy as a function of system size (`n_q`), comparing hypergraph, shadow-surrogate and ML baselines across noise channels:
+
+> 📊 **Main result** — `manuscript/figures_manuscript/fig4_dephasing_relax.pdf`
 
 ---
 
@@ -11,71 +28,93 @@ This repository contains simulations and analysis investigating the learning adv
 ```
 noisy-learning-advantage-3/
 │
+├── README.md                    ← this file
+│
 ├── data/                        # All raw and processed data
-│   ├── fig4_clean_m_vm_grids_nq*.json   # Pre-computed VM grids for figures
+│   ├── fig4_clean_m_vm_grids_nq*.json   # Pre-computed Vm grids (Fig. 4)
 │   ├── old/                     # Archived older data
-│   ├── curve_fitting/           # Curve fitting scripts and outputs
-│   ├── ml_data/                 # Machine learning data (with/without HPO)
-│   └── paper_data_2/            # Hypergraph, ML and shadow surrogate data
+│   ├── curve_fitting/           # Curve-fitting scripts and CSV/JSON outputs
+│   ├── ml_data/                 # ML training results (with/without HPO)
+│   └── paper_data_2/            # Hypergraph, ML, and shadow-surrogate data
 │
 ├── code/                        # All simulation and analysis code
-│   ├── quantum_simulation/      # Main MC and DM quantum trajectory simulations
-│   │   ├── mc_quantum_sim.py        # Monte Carlo trajectory simulation (CLI)
-│   │   ├── quantum_run_dm_verification.py  # Density matrix verification (CLI)
-│   │   ├── dm_quantum_sim.ipynb     # DM simulation notebook
-│   │   ├── quantum_run_mc_optimized.py     # Top-level MC wrapper
-│   │   └── modules/             # Helper modules (device config, noise, etc.)
-│   └── shadows_simulation/      # JAX-jitted classical shadow utilities
-│       ├── shadow_mcs_jitted.py     # Core trajectory sampling + grouping (JAX)
-│       └── shadow_funcs_dm.py       # Density-matrix shadow computation
+│   ├── quantum_simulation/      # MC + DM quantum trajectory simulations
+│   │   ├── README.md
+│   │   ├── quantum_run_cluster_single_without_IS_readable.py  # main MC runner
+│   │   ├── quantum_run_dm_verification.py
+│   │   ├── shadow_mcs_jitted.py
+│   │   ├── shadow_funcs_dm.py
+│   │   └── modules/             # device config, noise channels, circuit helpers
+│   └── shadows_simulation/      # JAX classical-shadow utilities + white-noise verification
+│       ├── shadow_mcs_jitted.py
+│       ├── shadow_funcs_dm.py
+│       ├── classical_nn_run_light.py
+│       ├── verify_white_noise_model.ipynb  ← white-noise model validation notebook
+│       └── verify_white_noise_tests.py
 │
 └── manuscript/                  # Manuscript figures and notebooks
     ├── figures_notebooks/       # Jupyter notebooks that generate all figures
-    └── figures_manuscript/      # Final rendered figures for the paper
+    │   ├── fig1_relaxation_main.ipynb
+    │   ├── fig3_mf_protocols.ipynb
+    │   ├── fig4_nps_nq_alpha_ch.ipynb
+    │   ├── fig_mf_fixedacc_validation.ipynb
+    │   ├── fig_mf_scaling_extrapolation.ipynb
+    │   ├── fig_circuit_gate_analysis.ipynb
+    │   ├── appB.ipynb
+    │   └── appC.ipynb
+    └── figures_manuscript/      # Final rendered figures (PDF/PNG)
+        ├── Fig1_cartoon.pdf
+        └── fig4_dephasing_relax.pdf
 ```
 
 ---
 
 ## Quick Start
 
-### Monte Carlo Quantum Simulation
+### 1 — MC quantum simulation (cluster / local)
 
-Run from **any directory**:
 ```bash
-python3 code/quantum_simulation/mc_quantum_sim.py \
+python3 code/quantum_simulation/quantum_run_cluster_single_without_IS_readable.py \
     --device S --channel relaxation \
     --nq 8 --nfk 10 --total_nf 10 \
     --alpha_pattern nq/2
 ```
 
-Key arguments:
-
-| Argument | Options | Description |
-|---|---|---|
-| `--device` | `I, R, T, S` | Device type |
-| `--channel` | `relaxation, dephasing, depolarizing` | Noise channel |
-| `--nq` | integer | Number of qubits |
-| `--alpha_pattern` | `nq/4, nq/2, 3/4nq, nq` | Shadow probing pattern |
-
-### Density Matrix Verification
+### 2 — DM verification
 
 ```bash
 python3 code/quantum_simulation/quantum_run_dm_verification.py \
     --device S --channel relaxation --nq 6
 ```
 
+### 3 — Figure notebooks
+
+Open any notebook under `manuscript/figures_notebooks/` in JupyterLab or VS Code.  
+All notebooks resolve `REPO_ROOT` by walking up to the `.git` directory, so they work from any working directory.
+
 ---
 
 ## Key Dependencies
 
-- **JAX** — GPU-accelerated trajectory sampling and JIT compilation
-- **TensorCircuit** — Quantum circuit simulation and shadow tomography
-- **NumPy / SciPy** — Data processing and curve fitting
+| Package | Purpose |
+|---|---|
+| **JAX** | GPU-accelerated trajectory sampling, JIT compilation |
+| **TensorCircuit** | Quantum circuit simulation and shadow tomography |
+| **NumPy / SciPy** | Data processing and curve fitting |
+| **Matplotlib** | Plotting |
+| **scikit-learn** | Logistic regression accuracy evaluation |
 
 ---
 
 ## Notes
 
-- `shadows_simulation/` must remain a sibling of `quantum_simulation/` inside `code/` — the import paths are relative to this layout.
-- Outputs are written to `cluster_results/` inside the working directory by default.
-- For cluster runs, see the shell scripts in `code/quantum_simulation/`.
+- `shadows_simulation/` must remain a **sibling** of `quantum_simulation/` inside `code/` — import paths are relative to this layout.
+- Outputs from cluster runs land in `code/quantum_simulation/cluster_results/` (not tracked by git).
+
+---
+
+## TODO
+
+- [ ] **Refactor file names and locations** — consolidate `shadow_funcs_dm.py` (currently duplicated between `quantum_simulation/` and `shadows_simulation/`); rename scripts to follow a consistent convention; restructure `modules/` vs top-level files.
+- [ ] **Upload data to Zenodo** — deposit `data/paper_data_2/`, `data/ml_data/`, and `data/curve_fitting/` outputs as a citable Zenodo dataset (DOI TBD).
+- [ ] **Add hypergraph code** — integrate the hypergraph shadow-protocol implementation (currently lives outside this repository) alongside the existing shadow and ML baselines.
