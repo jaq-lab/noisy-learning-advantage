@@ -12,7 +12,7 @@
 This repository contains simulations and analysis code for the paper:
 
 > **"Evidence of Quantum Machine Learning Advantage with Tens of Noisy Qubits"**  
-> Yash J. Patel, Riccardo Molteni, Evert van Nieuwenburg, Vedran Dunjko and Jan A. Krzywda[arXiv:2605.21346](https://arxiv.org/abs/2605.21346)  
+> Yash J. Patel, Riccardo Molteni, Evert van Nieuwenburg, Vedran Dunjko and Jan A. Krzywda [arXiv:2605.21346](https://arxiv.org/abs/2605.21346)  
 > Investigating when and how quantum measurement protocols retain a learning advantage under realistic, hardware-level noise.
 
 
